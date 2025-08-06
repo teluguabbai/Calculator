@@ -25,7 +25,8 @@ SECRET_KEY = 'mokk0nwua@oqtged*fa+skcuyi)+_)di_h*2+&h##i0**4k6g4'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['calculator-k7h8.onrender.com', 'localhost', '127.0.0.1']
+
 
 
 # Application definition
