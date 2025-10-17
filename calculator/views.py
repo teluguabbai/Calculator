@@ -1,49 +1,92 @@
 from django.shortcuts import render
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import math
 
 def calculator(request):
-    result = None
-    years = months = days = 0
-    from_date = to_date = ''
-    principal = rate = interest_type = ''
+    context = {
+        'result': None,
+        'total_amount': None,
+        'years': 0, 'months': 0, 'days': 0,
+        'from_date': '', 'to_date': '',
+        'principal': '', 'rate': '', 'interest_type': '',
+        'compounding': 'annual',
+        'error': None,
+    }
 
     if request.method == 'POST':
-        # Get input values
-        from_date = request.POST.get('from_date')
-        to_date = request.POST.get('to_date')
-        principal = request.POST.get('principal')
-        rate = request.POST.get('rate')
-        interest_type = request.POST.get('interest_type')
+        # Read inputs (use defaults to avoid None)
+        from_date = request.POST.get('from_date', '')
+        to_date = request.POST.get('to_date', '')
+        principal = request.POST.get('principal', '0')
+        rate = request.POST.get('rate', '0')
+        interest_type = request.POST.get('interest_type', 'simple')  # 'simple' or 'compound'
+        compounding = request.POST.get('compounding', 'annual')      # 'annual','semiannual','quarterly','monthly','daily','continuous'
 
-        # Convert to proper types
-        start_date = datetime.strptime(from_date, '%Y-%m-%d')
-        end_date = datetime.strptime(to_date, '%Y-%m-%d')
-        principal = float(principal)
-        rate = float(rate)
+        context.update({
+            'from_date': from_date, 'to_date': to_date,
+            'principal': principal, 'rate': rate,
+            'interest_type': interest_type, 'compounding': compounding
+        })
 
-        # Calculate date difference
+        # Validate + parse
+        try:
+            start_date = datetime.strptime(from_date, '%Y-%m-%d')
+            end_date = datetime.strptime(to_date, '%Y-%m-%d')
+        except ValueError:
+            context['error'] = 'Please enter valid dates (YYYY-MM-DD).'
+            return render(request, 'calculator.html', context)
+
+        if end_date < start_date:
+            context['error'] = 'End date must be after start date.'
+            return render(request, 'calculator.html', context)
+
+        try:
+            P = float(principal)
+            r = float(rate)
+        except ValueError:
+            context['error'] = 'Principal and rate must be numeric.'
+            return render(request, 'calculator.html', context)
+
+        # human-friendly breakdown for display
         delta = relativedelta(end_date, start_date)
-        years = delta.years
-        months = delta.months
-        days = delta.days
+        context['years'] = delta.years
+        context['months'] = delta.months
+        context['days'] = delta.days
 
-        total_time_years = years + months / 12 + days / 365.25
+        # precise total-time-in-years using actual days
+        total_days = (end_date - start_date).days
+        DAY_COUNT = 365.25   # choose convention: 365, 365.25, or 360 depending on your needs
+        t_years = total_days / DAY_COUNT
 
-        # Calculate interest
+        # compute interest
+        interest = 0.0
+        total_amount = None
+
         if interest_type == 'simple':
-            result = (principal * rate * total_time_years) / 100
-        elif interest_type == 'compound':
-            result = principal * ((1 + rate / 100) ** total_time_years) - principal
+            # Simple interest: I = P * r * t
+            interest = P * (r / 100.0) * t_years
+            total_amount = P + interest
 
-    return render(request, 'calculator.html', {
-        'result': result,
-        'years': years,
-        'months': months,
-        'days': days,
-        'from_date': from_date,
-        'to_date': to_date,
-        'principal': principal,
-        'rate': rate,
-        'interest_type': interest_type,
-    })
+        else:  # compound
+            if compounding == 'continuous':
+                total_amount = P * math.exp((r / 100.0) * t_years)
+                interest = total_amount - P
+            else:
+                freq_map = {
+                    'annual': 1,
+                    'semiannual': 2,
+                    'quarterly': 4,
+                    'monthly': 12,
+                    'daily': 365,
+                }
+                n = freq_map.get(compounding, 1)
+                # A = P * (1 + r/(100*n))^(n*t)
+                total_amount = P * ((1 + (r / 100.0) / n) ** (n * t_years))
+                interest = total_amount - P
+
+        # Round results for display
+        context['result'] = round(interest, 2)
+        context['total_amount'] = round(total_amount, 2)
+
+    return render(request, 'calculator.html', context)
