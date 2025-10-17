@@ -1,101 +1,4 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Interest Calculator</title>
-
-
-    
-    <style>
-        body {
-            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            height: 100vh;
-            padding-top: 50px;
-            margin: 0;
-        }
-
-        .calculator-container {
-            background: #ffffffcc;
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px 40px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            width: 400px;
-            transition: 0.3s ease;
-        }
-
-        .calculator-container:hover {
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 26px;
-            margin-bottom: 25px;
-            color: #111827;
-        }
-
-        label {
-            font-weight: 600;
-            color: #374151;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px 12px;
-            margin: 6px 0 16px 0;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            background-color: #f9fafb;
-            font-size: 16px;
-            transition: all 0.2s ease-in-out;
-        }
-
-        input:focus, select:focus {
-            border-color: #3b82f6;
-            background-color: #ffffff;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-        }
-
-        button {
-            background-color: #3b82f6;
-            color: white;
-            padding: 12px;
-            width: 100%;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
-        }
-
-        button:hover {
-            background-color: #2563eb;
-        }
-
-        .result {
-            margin-top: 30px;
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid #cbd5e1;
-        }
-
-        .result h2 {
-            margin-top: 0;
-            color: #111827;
-        }
-
-        .result p {
-            margin: 6px 0;
-            color: #374151;
-        }
-        <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -194,8 +97,15 @@
             border: 1px solid #cbd5e1;
         }
 
-        .result h2
+        .result h2 {
+            margin: 0 0 10px;
+            color: #111827;
+        }
 
+        .result p {
+            margin: 5px 0;
+            color: #374151;
+        }
     </style>
 </head>
 <body>
@@ -228,9 +138,13 @@
 
         {% if result is not None %}
             <div class="result">
-                <h2>Calculated Interest: ₹{{ result|floatformat:2 }}</h2>
-                <p>Duration: {{ years }} years, {{ months }} months, {{ days }} days</p>
-                <p>From: {{ from_date }} &nbsp;&nbsp; To: {{ to_date }}</p>
+                {% if result|stringformat:"s"|slice:":5" == "Error" %}
+                    <h2 style="color:red;">{{ result }}</h2>
+                {% else %}
+                    <h2>Calculated Interest: ₹{{ result|floatformat:2 }}</h2>
+                    <p>Duration: {{ years }} years, {{ months }} months, {{ days }} days</p>
+                    <p>From: {{ from_date }} &nbsp;&nbsp; To: {{ to_date }}</p>
+                {% endif %}
             </div>
         {% endif %}
     </div>
