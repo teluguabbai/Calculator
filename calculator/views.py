@@ -1,42 +1,42 @@
 from django.shortcuts import render
 from datetime import datetime
-import math
 
 def interest_calculator(request):
     result = None
     years = months = days = 0
-    principal = rate = from_date = to_date = interest_type = None
+    principal = rate = from_date = to_date = interest_type = ''
 
     if request.method == "POST":
-        principal = float(request.POST.get("principal"))
-        rate = float(request.POST.get("rate"))
-        from_date = request.POST.get("from_date")
-        to_date = request.POST.get("to_date")
-        interest_type = request.POST.get("interest_type")
+        principal_str = request.POST.get("principal", "0")
+        rate_str = request.POST.get("rate", "0")
+        from_date = request.POST.get("from_date", "")
+        to_date = request.POST.get("to_date", "")
+        interest_type = request.POST.get("interest_type", "")
 
-        # Convert dates
-        from_date_obj = datetime.strptime(from_date, "%Y-%m-%d")
-        to_date_obj = datetime.strptime(to_date, "%Y-%m-%d")
+        try:
+            principal = float(principal_str)
+            rate = float(rate_str)
 
-        # Duration in days
-        delta = to_date_obj - from_date_obj
-        days = delta.days
+            if from_date and to_date:
+                from_date_obj = datetime.strptime(from_date, "%Y-%m-%d")
+                to_date_obj = datetime.strptime(to_date, "%Y-%m-%d")
 
-        # Convert to years and months
-        years = days // 365
-        months = (days % 365) // 30
-        days = (days % 365) % 30
+                delta = to_date_obj - from_date_obj
+                total_days = delta.days
 
-        time_in_years = (to_date_obj - from_date_obj).days / 365.0  # fraction of years
+                years = total_days // 365
+                months = (total_days % 365) // 30
+                days = (total_days % 365) % 30
 
-        # Simple Interest
-        if interest_type == "simple":
-            result = (principal * rate * time_in_years) / 100
+                time_in_years = total_days / 365.0
 
-        # Compound Interest
-        elif interest_type == "compound":
-            # Compounded yearly
-            result = principal * ((1 + (rate / 100)) ** time_in_years) - principal
+                if interest_type == "simple":
+                    result = (principal * rate * time_in_years) / 100
+                elif interest_type == "compound":
+                    result = principal * ((1 + rate/100) ** time_in_years) - principal
+
+        except ValueError:
+            result = "Invalid input"
 
     return render(request, "calculator.html", {
         "result": result,
