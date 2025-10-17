@@ -7,12 +7,14 @@ def calculator(request):
     years = months = days = 0
     from_date = to_date = ''
     principal = rate = ''
+    interest_type = 'simple'  # default
 
     if request.method == 'POST':
         from_date = request.POST.get('from_date', '')
         to_date = request.POST.get('to_date', '')
         principal = request.POST.get('principal', '0')
         rate = request.POST.get('rate', '0')  # monthly rate in %
+        interest_type = request.POST.get('interest_type', 'simple')
 
         try:
             start_date = datetime.strptime(from_date, '%Y-%m-%d')
@@ -27,10 +29,15 @@ def calculator(request):
         years, months, days = delta.years, delta.months, delta.days
 
         # Total months + fractional months
-        total_months = years * 12 + months + (days / 30)  # approx days as fraction of month
+        total_months = years * 12 + months + (days / 30)  # approximate days as fraction of month
 
-        # Interest = Principal * (Rate/100) * months
-        result = P * (R / 100) * total_months
+        # Calculate interest based on type
+        if interest_type == 'simple':
+            # Simple Interest: P * R% * months
+            result = P * (R / 100) * total_months
+        elif interest_type == 'compound':
+            # Compound Interest compounded monthly: P * ((1 + R/100)^months - 1)
+            result = P * ((1 + (R / 100)) ** total_months - 1)
 
         result = round(result, 2)
 
@@ -43,4 +50,5 @@ def calculator(request):
         'to_date': to_date,
         'principal': principal,
         'rate': rate,
+        'interest_type': interest_type,
     })
