@@ -30,14 +30,14 @@ def calculator(request):
                 months = delta.months
                 days = delta.days
 
-                # Total months for calculation (approximate)
+                # Total months (approximate days as fraction)
                 total_months = years * 12 + months + (days / 30)
 
                 if interest_type == 'simple':
-                    # Simple Interest per month = (Principal * Rate) / 100 * total_months
+                    # Simple Interest = Principal * Rate% per month * total months
                     result = (principal * rate / 100) * total_months
                 elif interest_type == 'compound':
-                    # Compound Interest per month = P * ((1 + rate/100)^months - 1)
+                    # Compound Interest per month = Principal * ((1 + rate/100)^months - 1)
                     result = principal * ((1 + rate / 100) ** total_months - 1)
                 else:
                     result = "Error: Invalid Interest Type"
@@ -46,7 +46,7 @@ def calculator(request):
             result = f"Error: {str(e)}"
 
     context = {
-        'result': result,
+        'result': round(result, 2) if isinstance(result, float) else result,
         'years': int(years),
         'months': int(months),
         'days': int(days),
