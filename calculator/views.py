@@ -13,7 +13,7 @@ def calculator(request):
         to_date = request.POST.get('to_date')
         principal = request.POST.get('principal', '0')
         rate = request.POST.get('rate', '0')
-        interest_type = request.POST.get('interest_type', 'simple')
+        interest_type = request.POST.get('interest_type')
 
         try:
             principal = float(principal)
