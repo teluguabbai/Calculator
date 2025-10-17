@@ -16,7 +16,6 @@ def calculator(request):
         interest_type = request.POST.get('interest_type', 'simple')
 
         try:
-            # Convert inputs to correct types
             principal = float(principal)
             rate = float(rate)
             from_date_obj = datetime.strptime(from_date, '%Y-%m-%d')
@@ -31,19 +30,15 @@ def calculator(request):
                 months = delta.months
                 days = delta.days
 
-                # Total months for calculation
-                total_months = years * 12 + months + (days / 30)  # approximate days as fraction of month
+                # Total months for calculation (approximate)
+                total_months = years * 12 + months + (days / 30)
 
                 if interest_type == 'simple':
-                    # Simple Interest = Principal * Rate * Time
-                    result = principal + (principal * rate * total_months)
+                    # Simple Interest per month = (Principal * Rate) / 100 * total_months
+                    result = (principal * rate / 100) * total_months
                 elif interest_type == 'compound':
-                    # Compound Interest monthly: A = P * (1 + r)^n
-                    # Here rate is per month in Rs, so formula: total = P * (1 + rate/P)^months
-                    # But if rate is fixed Rs per month, compound per month = principal + sum of monthly interests
-                    # Assuming monthly compounding as per Rs/month: A = P*(1 + (rate/principal))^months
-                    monthly_rate_fraction = rate / principal
-                    result = principal * ((1 + monthly_rate_fraction) ** total_months)
+                    # Compound Interest per month = P * ((1 + rate/100)^months - 1)
+                    result = principal * ((1 + rate / 100) ** total_months - 1)
                 else:
                     result = "Error: Invalid Interest Type"
 
