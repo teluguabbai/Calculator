@@ -6,49 +6,60 @@ def calculator(request):
     result = None
     years = months = days = 0
     from_date = to_date = ''
-    principal = rate = ''
-    interest_type = 'simple'  # default
+    principal = rate = interest_type = ''
 
     if request.method == 'POST':
-        from_date = request.POST.get('from_date', '')
-        to_date = request.POST.get('to_date', '')
+        from_date = request.POST.get('from_date')
+        to_date = request.POST.get('to_date')
         principal = request.POST.get('principal', '0')
-        rate = request.POST.get('rate', '0')  # monthly rate in %
+        rate = request.POST.get('rate', '0')
         interest_type = request.POST.get('interest_type', 'simple')
 
         try:
-            start_date = datetime.strptime(from_date, '%Y-%m-%d')
-            end_date = datetime.strptime(to_date, '%Y-%m-%d')
-            P = float(principal)
-            R = float(rate)   # monthly % (ex: 2 means 2% per month)
-        except Exception:
-            return render(request, 'calculator.html', {'error': 'Invalid input!'})
+            # Convert inputs to correct types
+            principal = float(principal)
+            rate = float(rate)
+            from_date_obj = datetime.strptime(from_date, '%Y-%m-%d')
+            to_date_obj = datetime.strptime(to_date, '%Y-%m-%d')
 
-        # Difference in years, months, days
-        delta = relativedelta(end_date, start_date)
-        years, months, days = delta.years, delta.months, delta.days
+            if to_date_obj < from_date_obj:
+                result = "Error: To Date must be after From Date"
+            else:
+                # Calculate duration
+                delta = relativedelta(to_date_obj, from_date_obj)
+                years = delta.years
+                months = delta.months
+                days = delta.days
 
-        # Total months + fractional months
-        total_months = years * 12 + months + (days / 30)  # approximate days as fraction of month
+                # Total months for calculation
+                total_months = years * 12 + months + (days / 30)  # approximate days as fraction of month
 
-        # Calculate interest based on type
-        if interest_type == 'simple':
-            # Simple Interest: P * R% * months
-            result = P * (R / 100) * total_months
-        elif interest_type == 'compound':
-            # Compound Interest compounded monthly: P * ((1 + R/100)^months - 1)
-            result = P * ((1 + (R / 100)) ** total_months - 1)
+                if interest_type == 'simple':
+                    # Simple Interest = Principal * Rate * Time
+                    result = principal + (principal * rate * total_months)
+                elif interest_type == 'compound':
+                    # Compound Interest monthly: A = P * (1 + r)^n
+                    # Here rate is per month in Rs, so formula: total = P * (1 + rate/P)^months
+                    # But if rate is fixed Rs per month, compound per month = principal + sum of monthly interests
+                    # Assuming monthly compounding as per Rs/month: A = P*(1 + (rate/principal))^months
+                    monthly_rate_fraction = rate / principal
+                    result = principal * ((1 + monthly_rate_fraction) ** total_months)
+                else:
+                    result = "Error: Invalid Interest Type"
 
-        result = round(result, 2)
+        except Exception as e:
+            result = f"Error: {str(e)}"
 
-    return render(request, 'calculator.html', {
+    context = {
         'result': result,
-        'years': years,
-        'months': months,
-        'days': days,
+        'years': int(years),
+        'months': int(months),
+        'days': int(days),
         'from_date': from_date,
         'to_date': to_date,
         'principal': principal,
         'rate': rate,
         'interest_type': interest_type,
-    })
+    }
+
+    return render(request, 'calculator.html', context)
