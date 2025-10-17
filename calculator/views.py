@@ -1,59 +1,51 @@
-from django.shortcuts import render
+ from django.shortcuts import render
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
+import math
 
-def calculator(request):
+def interest_calculator(request):
     result = None
-    total_amount = None
     years = months = days = 0
-    from_date = to_date = ''
-    principal = rate = ''
-    interest_type = 'simple'
+    principal = rate = from_date = to_date = interest_type = None
 
-    if request.method == 'POST':
-        from_date = request.POST.get('from_date', '')
-        to_date = request.POST.get('to_date', '')
-        principal = request.POST.get('principal', '0')
-        rate = request.POST.get('rate', '0')  # monthly rate in %
+    if request.method == "POST":
+        principal = float(request.POST.get("principal"))
+        rate = float(request.POST.get("rate"))
+        from_date = request.POST.get("from_date")
+        to_date = request.POST.get("to_date")
+        interest_type = request.POST.get("interest_type")
 
-        try:
-            start_date = datetime.strptime(from_date, '%Y-%m-%d')
-            end_date = datetime.strptime(to_date, '%Y-%m-%d')
-            P = float(principal)
-            R = float(rate)   # monthly rate in %
-        except Exception:
-            return render(request, 'calculator.html', {'error': 'Invalid input!'})
+        # Convert dates
+        from_date_obj = datetime.strptime(from_date, "%Y-%m-%d")
+        to_date_obj = datetime.strptime(to_date, "%Y-%m-%d")
 
-        interest_type = request.POST.get('interest_type', 'simple')
+        # Duration in days
+        delta = to_date_obj - from_date_obj
+        days = delta.days
 
-        # Difference in years, months, days
-        delta = relativedelta(end_date, start_date)
-        years, months, days = delta.years, delta.months, delta.days
+        # Convert to years and months
+        years = days // 365
+        months = (days % 365) // 30
+        days = (days % 365) % 30
 
-        # Convert period into months (with fractional part for days)
-        total_months = years * 12 + months + (days / 30)
+        time_in_years = (to_date_obj - from_date_obj).days / 365.0  # fraction of years
 
-        if interest_type == 'simple':
-            # Simple Interest
-            result = P * (R / 100) * total_months
-            total_amount = P + result
-        else:
-            # Compound Interest (monthly compounding)
-            total_amount = P * ((1 + (R / 100)) ** total_months)
-            result = total_amount - P
+        # Simple Interest
+        if interest_type == "simple":
+            result = (principal * rate * time_in_years) / 100
 
-        result = round(result, 2)
-        total_amount = round(total_amount, 2)
+        # Compound Interest
+        elif interest_type == "compound":
+            # Compounded yearly
+            result = principal * ((1 + (rate / 100)) ** time_in_years) - principal
 
-    return render(request, 'calculator.html', {
-        'result': result,
-        'total_amount': total_amount,
-        'years': years,
-        'months': months,
-        'days': days,
-        'from_date': from_date,
-        'to_date': to_date,
-        'principal': principal,
-        'rate': rate,
-        'interest_type': interest_type,
+    return render(request, "calculator.html", {
+        "result": result,
+        "principal": principal,
+        "rate": rate,
+        "from_date": from_date,
+        "to_date": to_date,
+        "interest_type": interest_type,
+        "years": years,
+        "months": months,
+        "days": days
     })
